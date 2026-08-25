@@ -216,19 +216,8 @@ class _HomeViewState extends State<HomeView> {
     ];
   }
 
-  void _onFabPressed(bool isConnected) {
-    if (!isConnected) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Dispositivo no conectado. Espera a que el sensor esté disponible.',
-          ),
-          backgroundColor: Color(0xFFB34343),
-          duration: Duration(seconds: 3),
-        ),
-      );
-      return;
-    }
+  void _onFabPressed() {
+    // gps no requiere conexion ble para iniciar ruta
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const RouteView()),
@@ -246,14 +235,13 @@ class _HomeViewState extends State<HomeView> {
           appBar: topBar(context, ble.isConnected),
           body: _buildScreens(ble.isConnected)[_selectedIndex],
           floatingActionButton: FloatingActionButton.large(
-            onPressed: () => _onFabPressed(ble.isConnected),
-            // deshabilitado cuando no hay conexión
-            backgroundColor:
-                ble.isConnected ? AppColors.green : AppColors.grey500,
+            onPressed: _onFabPressed,
+            // siempre activo - fuente de velocidad es el gps
+            backgroundColor: AppColors.green,
             shape: const CircleBorder(),
-            child: Icon(
+            child: const Icon(
               Icons.directions_bike,
-              color: ble.isConnected ? Colors.black : Colors.white38,
+              color: Colors.black,
               size: 40,
             ),
           ),

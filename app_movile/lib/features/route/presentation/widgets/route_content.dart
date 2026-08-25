@@ -35,7 +35,8 @@ Widget progressInfo(
         unit: 'km/h',
         icon: Icons.speed,
         valueColor: const Color(0xFF00E676),
-        progress: 0.6, 
+        // progreso dinamico: tope visual 60 km/h
+        progress: (currentSpeed / 60.0).clamp(0.0, 1.0),
       ),
       const SizedBox(height: 16),                
       TelemetryCard(
