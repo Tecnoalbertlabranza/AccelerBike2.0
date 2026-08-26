@@ -12,17 +12,51 @@ Widget welcomeMessage(BuildContext context) {
   );
 }
 
-Widget metrics(BuildContext context, String weeklyDistance) {
+Widget metrics(BuildContext context, String weeklyDistance, String weeklyTime, String weeklyCalories) {
   return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-     MetricCard(
-      title: 'Distancia Semanal',
-      value: weeklyDistance,
-      unit: 'km',
-      icon: Icons.route, 
-    ),
-    const SizedBox(height: 16),
-    ]
+      // titulo de la seccion semanal
+      const Text(
+        'ESTA SEMANA',
+        style: TextStyle(
+          color: Color(0xFF00E676),
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+        ),
+      ),
+      const SizedBox(height: 12),
+      Row(
+        children: [
+          Expanded(
+            child: MetricCard(
+              title: 'Distancia',
+              value: weeklyDistance,
+              unit: 'km',
+              icon: Icons.route,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: MetricCard(
+              title: 'Tiempo',
+              value: weeklyTime,
+              unit: 'HH:MM',
+              icon: Icons.timer_outlined,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      MetricCard(
+        title: 'Calorías quemadas',
+        value: weeklyCalories,
+        unit: 'kcal',
+        icon: Icons.local_fire_department_outlined,
+      ),
+      const SizedBox(height: 16),
+    ],
   );
 }
 

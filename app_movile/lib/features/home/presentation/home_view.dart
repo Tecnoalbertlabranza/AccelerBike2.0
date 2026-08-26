@@ -1,4 +1,5 @@
 import 'package:app_movile/core/theme/app_colors.dart';
+import 'package:app_movile/core/stats/weekly_stats_service.dart';
 import 'package:app_movile/features/home/presentation/widgets/home/home_content.dart';
 import 'package:app_movile/features/profile/presentation/profile_view.dart';
 import 'package:app_movile/features/route/presentation/route_view.dart';
@@ -19,20 +20,42 @@ class HomeView extends StatefulWidget {
 class _HomeViewState extends State<HomeView> {
   int _selectedIndex = 0;
   String _userName = 'Ciclista';
-  double totalDistance = 0.0;
-  bool isLoading = false;
+  // estadisticas semanales locales
+  double _weeklyDistance  = 0.0;
+  String _weeklyTime      = '00:00';
+  double _weeklyCalories  = 0.0;
   @override
   void initState() {
     super.initState();
     _loadUserName();
-    _fetchAndCalculateStatistics();
+    // cargando estadisticas semanales locales
+    _loadWeeklyStats();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkFirstTimeUsage();
     });
   }
   Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final localName = prefs.getString('profile_name') ?? '';
+    if (localName.isNotEmpty) {
+      if (mounted) setState(() => _userName = localName);
+      return;
+    }
+    // fallback a supabase si no hay nombre local
     final name = await supabaseService.getUserName();
     if (mounted) setState(() => _userName = name);
+  }
+
+  // carga las 3 estadisticas de la semana desde shared_preferences
+  Future<void> _loadWeeklyStats() async {
+    final stats = await WeeklyStatsService.instance.load();
+    if (mounted) {
+      setState(() {
+        _weeklyDistance = stats.distanceKm;
+        _weeklyTime     = stats.formattedTime;
+        _weeklyCalories = stats.calories;
+      });
+    }
   }
   
   Future<void> _checkFirstTimeUsage() async {
@@ -152,25 +175,8 @@ class _HomeViewState extends State<HomeView> {
     );
   }
   
-  Future<void> _fetchAndCalculateStatistics() async {
-    final trips = await supabaseService.getUserTrips();
-    if (trips.isEmpty) {
-      setState(() {
-        isLoading = false;
-      });
-      return;
-    }
-
-    double tempDistance = 0;
-    for (var trip in trips) {
-      tempDistance += (trip['total_distance_km'] ?? 0);
-    }
-
-    setState(() {
-      totalDistance = tempDistance; 
-      isLoading = false;
-    });
-  }
+  // ya no necesitamos fetch de supabase para la distancia semanal
+  // se lee directo de shared_preferences en _loadWeeklyStats
 
   List<Widget> _buildScreens() {
     return [
@@ -199,7 +205,12 @@ class _HomeViewState extends State<HomeView> {
             const SizedBox(height: 16),
             startTravel(context),
             const SizedBox(height: 28),     
-            metrics(context, totalDistance.toStringAsFixed(1)),
+            metrics(
+              context,
+              _weeklyDistance.toStringAsFixed(2),
+              _weeklyTime,
+              _weeklyCalories.toStringAsFixed(0),
+            ),
             const SizedBox(height: 16),
             Divider(
               color: const Color(0xFF004407),
@@ -217,10 +228,11 @@ class _HomeViewState extends State<HomeView> {
 
   void _onFabPressed() {
     // gps no requiere conexion ble para iniciar ruta
+    // al volver recargamos las estadisticas actualizadas
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const RouteView()),
-    );
+    ).then((_) => _loadWeeklyStats());
   }
 
   @override

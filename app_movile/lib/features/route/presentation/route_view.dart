@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:app_movile/core/stats/weekly_stats_service.dart';
 import 'package:app_movile/features/route/data/gps_telemetry_repository.dart';
 import 'package:app_movile/features/route/data/model/telemetry.dart';
 import 'package:app_movile/features/route/data/model/trip_summary.dart';
@@ -9,6 +10,7 @@ import 'package:app_movile/core/widgets/nav_bar.dart';
 import 'package:app_movile/core/auth/auth_state_notifier.dart';
 import 'package:app_movile/core/network/supabase_service.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RouteView extends StatefulWidget {
   const RouteView({super.key});
@@ -82,6 +84,16 @@ class _RouteViewState extends State<RouteView> {
       avgSpeedKmh: _sampleCount == 0 ? 0 : _speedSum / _sampleCount,
       distanceKm: _telemetry.distanceKm,
       durationSeconds: _stopwatch.elapsed.inSeconds,
+    );
+
+    // guarda estadisticas locales semanales
+    final prefs = await SharedPreferences.getInstance();
+    final weightStr = prefs.getString('profile_weight') ?? '70';
+    final weight = double.tryParse(weightStr) ?? 70.0;
+    await WeeklyStatsService.instance.addTrip(
+      distanceKm: summary.distanceKm,
+      durationSeconds: summary.durationSeconds,
+      weightKg: weight,
     );
 
     unawaited(
