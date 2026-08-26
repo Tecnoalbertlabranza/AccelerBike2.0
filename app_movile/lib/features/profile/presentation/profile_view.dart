@@ -1,4 +1,3 @@
-import 'package:app_movile/core/ble/ble_state_notifier.dart';
 import 'package:app_movile/core/network/supabase_service.dart';
 import 'package:app_movile/features/profile/presentation/widgets/profile_content.dart';
 import 'package:flutter/material.dart';
@@ -49,17 +48,6 @@ class _ProfileViewState extends State<ProfileView> {
                       ),
                       const SizedBox(height: 16),
                       cardProfile(context, _userName),
-                      const SizedBox(height: 24),
-
-                      ListenableBuilder(
-                        listenable: BleStateNotifier.instance,
-                        builder: (context, _) {
-                          return cardDevice(
-                            'ESP32 AccelerBike',
-                            BleStateNotifier.instance.isConnected,
-                          );
-                        },
-                      ),
                     ],
                   ),
                 ),

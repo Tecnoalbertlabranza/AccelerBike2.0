@@ -1,26 +1,13 @@
-import 'package:app_movile/core/theme/app_colors.dart';
 import 'package:app_movile/features/home/presentation/widgets/home/metric_card.dart';
 import 'package:flutter/material.dart';
 
-Widget welcomeMessage(BuildContext context, bool isConnected) {
-  return Text.rich(
-    TextSpan(
-      style: const TextStyle(
-        fontSize: 16, 
-        color: Colors.white70, 
-        height: 1.4 // Esto mejora el interlineado si el texto se divide en dos líneas
-      ),
-      children: [
-        const TextSpan(text: 'Dispositivo '),
-        TextSpan(
-          text: isConnected ? 'CONECTADO ' : 'DESCONECTADO ',
-          style: TextStyle(
-            color: isConnected ? AppColors.green : Colors.red,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        TextSpan(text: isConnected ? 'y listo para un nuevo viaje.': 'comprueba la conexion del dispositivo.'),
-      ],
+Widget welcomeMessage(BuildContext context) {
+  return const Text(
+    'GPS listo. Sal a pedalear cuando quieras.',
+    style: TextStyle(
+      fontSize: 16,
+      color: Colors.white70,
+      height: 1.4,
     ),
   );
 }

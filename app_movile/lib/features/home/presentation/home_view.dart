@@ -1,4 +1,3 @@
-import 'package:app_movile/core/ble/ble_state_notifier.dart';
 import 'package:app_movile/core/theme/app_colors.dart';
 import 'package:app_movile/features/home/presentation/widgets/home/home_content.dart';
 import 'package:app_movile/features/profile/presentation/profile_view.dart';
@@ -173,7 +172,7 @@ class _HomeViewState extends State<HomeView> {
     });
   }
 
-  List<Widget> _buildScreens(bool isConnected) {
+  List<Widget> _buildScreens() {
     return [
       SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
@@ -189,7 +188,7 @@ class _HomeViewState extends State<HomeView> {
                 ),
             ),
             const SizedBox(height: 24),
-            welcomeMessage(context, isConnected), 
+            welcomeMessage(context),
             const SizedBox(height: 16),
             Divider(
               color: const Color(0xFF004407),
@@ -226,31 +225,24 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: BleStateNotifier.instance,
-      builder: (context, _) {
-        final ble = BleStateNotifier.instance;
-        return Scaffold(
-          backgroundColor: const Color(0xFF0F1115),
-          appBar: topBar(context, ble.isConnected),
-          body: _buildScreens(ble.isConnected)[_selectedIndex],
-          floatingActionButton: FloatingActionButton.large(
-            onPressed: _onFabPressed,
-            // siempre activo - fuente de velocidad es el gps
-            backgroundColor: AppColors.green,
-            shape: const CircleBorder(),
-            child: const Icon(
-              Icons.directions_bike,
-              color: Colors.black,
-              size: 40,
-            ),
-          ),
-          bottomNavigationBar: NavBar(
-            currentIndex: _selectedIndex,
-            onTap: (index) => setState(() => _selectedIndex = index),
-          ),
-        );
-      },
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F1115),
+      appBar: topBar(context, false),
+      body: _buildScreens()[_selectedIndex],
+      floatingActionButton: FloatingActionButton.large(
+        onPressed: _onFabPressed,
+        backgroundColor: AppColors.green,
+        shape: const CircleBorder(),
+        child: const Icon(
+          Icons.directions_bike,
+          color: Colors.black,
+          size: 40,
+        ),
+      ),
+      bottomNavigationBar: NavBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) => setState(() => _selectedIndex = index),
+      ),
     );
   }
 }

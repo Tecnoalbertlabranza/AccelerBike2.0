@@ -137,7 +137,6 @@ class _RouteViewState extends State<RouteView> {
                     progressInfo(
                       context,
                       true,
-                      true,
                       _telemetry.distanceKm,
                       _formattedDuration,
                       _telemetry.speedKmh,

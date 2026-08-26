@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'ble_telemetry_repository.dart';
+import 'telemetry_repository.dart';
 import 'model/telemetry.dart';
 
 // Maneja permisos de ubicacion en tiempo de ejecucion

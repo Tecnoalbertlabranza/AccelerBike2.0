@@ -4,16 +4,15 @@ import 'package:app_movile/features/route/presentation/widgets/telemetry_card.da
 import 'package:flutter/material.dart';
 
 Widget progressInfo(
-    BuildContext context, 
-    bool isWakelockActive, bool isConnected, 
-    double distance, String duration, 
+    BuildContext context,
+    bool isWakelockActive,
+    double distance, String duration,
     double currentSpeed, double maxSpeed
   ){
   return Column(
     children: [
       StatusBanner(
         isWakelockActive: isWakelockActive,
-        isConnected: isConnected,
       ),
       const SizedBox(height: 24),
       TelemetryCard(

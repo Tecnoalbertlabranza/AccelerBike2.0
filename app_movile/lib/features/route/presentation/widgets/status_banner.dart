@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 
 class StatusBanner extends StatelessWidget {
   final bool isWakelockActive;
-  final bool isConnected;
 
   const StatusBanner({
     super.key,
     required this.isWakelockActive,
-    required this.isConnected,
   });
 
   @override
@@ -20,45 +18,32 @@ class StatusBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Estado Wakelock
-          Row(
-            children: [
-              Icon(
-                Icons.wb_incandescent_outlined,
-                color: isWakelockActive ? const Color(0xFF00E676) : Colors.grey,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'WAKELOCK ${isWakelockActive ? "ACTIVE" : "INACTIVE"}',
-                style: TextStyle(
-                  color: isWakelockActive ? const Color(0xFF00E676) : Colors.grey,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+          Icon(
+            Icons.wb_incandescent_outlined,
+            color: isWakelockActive ? const Color(0xFF00E676) : Colors.grey,
+            size: 16,
           ),
-          // Estado de Conexión del sensor
-          Row(
-            children: [
-              Icon(
-                Icons.rss_feed,
-                color: isConnected ? const Color(0xFF00E676) : Colors.red,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                isConnected ? 'CONECTADO' : 'DESCONECTADO',
-                style: TextStyle(
-                  color: isConnected ? const Color(0xFF00E676) : Colors.red,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+          const SizedBox(width: 8),
+          Text(
+            'WAKELOCK ${isWakelockActive ? "ACTIVE" : "INACTIVE"}',
+            style: TextStyle(
+              color: isWakelockActive ? const Color(0xFF00E676) : Colors.grey,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(width: 16),
+          // fuente de datos: gps
+          const Icon(Icons.gps_fixed, color: Color(0xFF00E676), size: 16),
+          const SizedBox(width: 8),
+          const Text(
+            'GPS ACTIVO',
+            style: TextStyle(
+              color: Color(0xFF00E676),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
