@@ -53,6 +53,13 @@ class GpsTelemetryRepository implements TelemetryRepository {
     final granted = await _permissionManager.requestPermissions();
     if (!granted) return;
 
+    // emite posicion inicial si esta disponible
+    try {
+      final initial = await Geolocator.getLastKnownPosition() ??
+          await Geolocator.getCurrentPosition();
+      _handlePosition(initial);
+    } catch (_) {}
+
     // inicia stream de posicion gps
     _positionSub = Geolocator.getPositionStream(
       locationSettings: _locationSettings,
@@ -81,6 +88,8 @@ class GpsTelemetryRepository implements TelemetryRepository {
     _controller.add(Telemetry(
       speedKmh: speedKmh,
       distanceKm: _accumulatedDistanceKm,
+      latitude: position.latitude,
+      longitude: position.longitude,
     ));
   }
 
@@ -92,6 +101,9 @@ class GpsTelemetryRepository implements TelemetryRepository {
     _accumulatedDistanceKm = 0.0;
     _lastPosition = null;
   }
+
+  // posicion actual conocida
+  Position? get lastPosition => _lastPosition;
 
   @override
   Stream<Telemetry> get telemetryStream => _controller.stream;

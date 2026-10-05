@@ -84,10 +84,11 @@ class _HomeViewState extends State<HomeView> {
                 '¡Bienvenido a AccelerBike!',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   const Text(
                     'Para comenzar, necesitamos algunos datos básicos.',
                     style: TextStyle(color: Colors.grey),
@@ -138,6 +139,7 @@ class _HomeViewState extends State<HomeView> {
                     ),
                   ),
                 ],
+                ),
               ),
               actions: [
                 isSaving 

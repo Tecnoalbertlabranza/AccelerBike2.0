@@ -1,16 +1,21 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:app_movile/core/auth/auth_state_notifier.dart';
+import 'package:app_movile/core/network/supabase_service.dart';
 import 'package:app_movile/core/stats/weekly_stats_service.dart';
+import 'package:app_movile/core/widgets/nav_bar.dart';
+import 'package:app_movile/core/widgets/top_bar.dart';
 import 'package:app_movile/features/route/data/gps_telemetry_repository.dart';
 import 'package:app_movile/features/route/data/model/telemetry.dart';
 import 'package:app_movile/features/route/data/model/trip_summary.dart';
 import 'package:app_movile/features/route/data/thingsboard_service.dart';
 import 'package:app_movile/features/route/presentation/widgets/route_content.dart';
-import 'package:app_movile/core/widgets/top_bar.dart';
-import 'package:app_movile/core/widgets/nav_bar.dart';
-import 'package:app_movile/core/auth/auth_state_notifier.dart';
-import 'package:app_movile/core/network/supabase_service.dart';
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:app_movile/features/route/presentation/widgets/status_banner.dart';
+import 'package:app_movile/features/route/presentation/widgets/telemetry_card.dart';
 
 class RouteView extends StatefulWidget {
   const RouteView({super.key});
@@ -27,6 +32,13 @@ class _RouteViewState extends State<RouteView> {
   StreamSubscription<Telemetry>? _telemetrySub;
   final ThingsBoardService _thingsBoard = ThingsBoardService();
   Timer? _clockTimer;
+
+  // controlador de camara del mapa
+  final MapController _mapController = MapController();
+  // trazado de ruta del ciclista
+  final List<LatLng> _routePoints = [];
+  LatLng? _currentPosition;
+  bool _isMapReady = false;
 
   Telemetry _telemetry = Telemetry.empty();
   double _maxSpeed = 0;
@@ -54,6 +66,21 @@ class _RouteViewState extends State<RouteView> {
           if (data.speedKmh > _maxSpeed) _maxSpeed = data.speedKmh;
           _speedSum += data.speedKmh;
           _sampleCount++;
+
+          if (data.latitude != null && data.longitude != null) {
+            final newPos = LatLng(data.latitude!, data.longitude!);
+            _currentPosition = newPos;
+
+            // guardando coordenadas en la lista para el trazado
+            if (_routePoints.isEmpty || _routePoints.last != newPos) {
+              _routePoints.add(newPos);
+            }
+
+            // centrando camara gps
+            if (_isMapReady) {
+              _mapController.move(newPos, _mapController.camera.zoom);
+            }
+          }
         });
       });
     });
@@ -65,6 +92,7 @@ class _RouteViewState extends State<RouteView> {
     _clockTimer?.cancel();
     // cierra el repo al salir de la vista
     _repo.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -109,7 +137,10 @@ class _RouteViewState extends State<RouteView> {
         }
       }).catchError((_) {}),
     );
-    Navigator.pop(context);
+
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 
   Future<bool> _saveToSupabase(TripSummary summary) async {
@@ -135,33 +166,141 @@ class _RouteViewState extends State<RouteView> {
       backgroundColor: const Color(0xFF0F1115),
       // gps no necesita estado ble, pasamos true para que el topBar no muestre error
       appBar: topBar(context, true),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // pasa los datos del stream gps a la ui
-                    progressInfo(
-                      context,
-                      true,
-                      _telemetry.distanceKm,
-                      _formattedDuration,
-                      _telemetry.speedKmh,
-                      _maxSpeed,
+      body: Stack(
+        children: [
+          // fondo: mapa ocupando el 100% de la pantalla
+          Positioned.fill(
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: _currentPosition ?? const LatLng(-33.4489, -70.6693),
+                initialZoom: 16.0,
+                onMapReady: () {
+                  _isMapReady = true;
+                  if (_currentPosition != null) {
+                    // centrando camara gps
+                    _mapController.move(_currentPosition!, 16.0);
+                  }
+                },
+              ),
+              children: [
+                // capa de openstreetmap
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.accelerbike.app',
+                ),
+                // dibujando ruta del ciclista
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: _routePoints,
+                      strokeWidth: 5.0,
+                      color: Colors.red,
                     ),
-                    const SizedBox(height: 32),
-                    buttons(context, onStop: _onStopRide, isLoading: _isFinishing),
                   ],
                 ),
+                // marcador de posicion actual del ciclista
+                if (_currentPosition != null)
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: _currentPosition!,
+                        width: 22,
+                        height: 22,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00E676),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black45,
+                                blurRadius: 6,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+
+          // banner de estado superior
+          const Positioned(
+            top: 12,
+            left: 16,
+            right: 16,
+            child: StatusBanner(isWakelockActive: true),
+          ),
+
+          // boton flotante para recentrar camara gps
+          if (_currentPosition != null)
+            Positioned(
+              right: 16,
+              bottom: 270,
+              child: FloatingActionButton.small(
+                heroTag: 'recenter_gps_btn',
+                backgroundColor: const Color(0xFF1A1A1A),
+                foregroundColor: const Color(0xFF00E676),
+                onPressed: () {
+                  // centrando camara gps
+                  _mapController.move(_currentPosition!, _mapController.camera.zoom);
+                },
+                child: const Icon(Icons.my_location),
+              ),
+            ),
+
+          // tarjetas de telemetria flotando en la parte inferior
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // tarjeta de velocidad
+                  TelemetryCard(
+                    title: 'Velocidad',
+                    value: _telemetry.speedKmh.toStringAsFixed(1),
+                    unit: 'km/h',
+                    icon: Icons.speed,
+                    valueColor: const Color(0xFF00E676),
+                    progress: (_telemetry.speedKmh / 60.0).clamp(0.0, 1.0),
+                  ),
+                  const SizedBox(height: 8),
+                  // tarjetas de distancia y tiempo
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TelemetryCard(
+                          title: 'Distancia',
+                          value: _telemetry.distanceKm.toStringAsFixed(2),
+                          unit: 'km',
+                          icon: Icons.route,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TelemetryCard(
+                          title: 'Tiempo',
+                          value: _formattedDuration,
+                          icon: Icons.timer_outlined,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // botones de control de ruta
+                  buttons(context, onStop: _onStopRide, isLoading: _isFinishing),
+                ],
               ),
             ),
           ),
-        ),
+        ],
       ),
       bottomNavigationBar: NavBar(
         currentIndex: _selectedIndex,

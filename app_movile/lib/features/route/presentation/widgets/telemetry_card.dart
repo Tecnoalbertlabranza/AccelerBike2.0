@@ -35,13 +35,16 @@ class TelemetryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
+              Flexible(
+                child: Text(
+                  title.toUpperCase(),
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
+                  ),
                 ),
               ),
               Icon(icon, color: const Color(0xFF00E676), size: 16),
@@ -50,26 +53,30 @@ class TelemetryCard extends StatelessWidget {
           const SizedBox(height: 4),
           
           // Fila Central: Valor Principal y Unidad
-          Row(
-            textBaseline: TextBaseline.alphabetic,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  color: valueColor,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold, 
-                ),
-              ),
-              if (unit.isNotEmpty) ...[
-                const SizedBox(width: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              textBaseline: TextBaseline.alphabetic,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              children: [
                 Text(
-                  unit,
-                  style: const TextStyle(color: Colors.grey, fontSize: 16),
+                  value,
+                  style: TextStyle(
+                    color: valueColor,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold, 
+                  ),
                 ),
+                if (unit.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    unit,
+                    style: const TextStyle(color: Colors.grey, fontSize: 16),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
           
           if (progress != null) ...[
