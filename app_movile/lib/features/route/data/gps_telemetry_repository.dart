@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -42,11 +43,29 @@ class GpsTelemetryRepository implements TelemetryRepository {
     GpsPermissionManager? permissionManager,
     LocationSettings? locationSettings,
   })  : _permissionManager = permissionManager ?? GpsPermissionManager(),
-        _locationSettings = locationSettings ??
-            const LocationSettings(
-              accuracy: LocationAccuracy.high,
-              distanceFilter: 0,
-            );
+        _locationSettings = locationSettings ?? _defaultLocationSettings();
+
+  // configuracion de gps de alta frecuencia y precision (estilo Strava)
+  static LocationSettings _defaultLocationSettings() {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return AndroidSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+        intervalDuration: const Duration(milliseconds: 500),
+      );
+    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      return AppleSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+        activityType: ActivityType.fitness,
+        pauseLocationUpdatesAutomatically: false,
+      );
+    }
+    return const LocationSettings(
+      accuracy: LocationAccuracy.bestForNavigation,
+      distanceFilter: 0,
+    );
+  }
 
   // llama esto antes de suscribirte al stream
   Future<void> initialize() async {
@@ -68,9 +87,10 @@ class GpsTelemetryRepository implements TelemetryRepository {
 
   // calculo de dist con geolocator + conversion m/s a km/h
   void _handlePosition(Position position) {
+    double meters = 0.0;
     if (_lastPosition != null) {
       // distancia en metros entre la pos anterior y la actual
-      final meters = Geolocator.distanceBetween(
+      meters = Geolocator.distanceBetween(
         _lastPosition!.latitude,
         _lastPosition!.longitude,
         position.latitude,
@@ -80,13 +100,23 @@ class GpsTelemetryRepository implements TelemetryRepository {
       _accumulatedDistanceKm += meters / 1000.0;
     }
 
+    // calculo y conversion de velocidad en km/h
+    double speedKmh = 0.0;
+    if (position.speed > 0) {
+      // velocidad directa por efecto doppler del sensor gps
+      speedKmh = position.speed * 3.6;
+    } else if (_lastPosition != null && meters > 0) {
+      // respaldo: calculo por delta de distancia y tiempo si speed no esta disponible
+      final elapsedMs = position.timestamp.difference(_lastPosition!.timestamp).inMilliseconds;
+      if (elapsedMs > 0) {
+        speedKmh = (meters / (elapsedMs / 1000.0)) * 3.6;
+      }
+    }
+
     _lastPosition = position;
 
-    // geolocator da speed en m/s → km/h
-    final speedKmh = (position.speed * 3.6).clamp(0.0, double.infinity);
-
     _controller.add(Telemetry(
-      speedKmh: speedKmh,
+      speedKmh: speedKmh.clamp(0.0, double.infinity),
       distanceKm: _accumulatedDistanceKm,
       latitude: position.latitude,
       longitude: position.longitude,
